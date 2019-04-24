@@ -10,6 +10,7 @@ String.prototype.toObjectId = function(key = '_id') {
   return {[key]: new ObjectId(this)};
 };
 
+
 export const createApp = config => {
   const app = koa();
 
@@ -23,11 +24,14 @@ export const createApp = config => {
     }
   });
 
+
   // var delay = require('koa-delay');
   // app.use(delay(1000, 20));
-
   app.use(koaCors());
   app.use(koaBodyParser());
+
+  
+  
   // app.use(koaServe(__dirname + '../public'));
   app.use(koaServe(`./${config.server.basePath}public`));
   if (process.env.ENABLE_ROOT_TEMPLATES) {
@@ -49,6 +53,8 @@ export const createApp = config => {
   require('./resources/clients.js').default(app);
   require('./resources/invoices.js').default(app);
   require('./resources/attachments.js').default(app);
+  require('./resources/users.js').default(app);
+
 
   app.use(function *pageNotFound(next) {
     yield next;
@@ -68,6 +74,6 @@ export const createApp = config => {
     //this.type = 'html';
     yield koaSend(this, `./${config.server.basePath}public/index.html`);
   });
-
+ 
   return app;
 };

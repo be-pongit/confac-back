@@ -1,10 +1,13 @@
 import Router from 'koa-router';
 import slugify from 'slugify';
+import jwt from '../jwt';
 
 export default function register(app) {
   const router = new Router({
     prefix: '/api/clients'
   });
+
+ router.use(jwt.errorHandler()).use(jwt.jwt());
 
   router.get('/', function *(next) {
     this.body = yield this.mongo.collection('clients').find().toArray();
