@@ -29,10 +29,7 @@ export default function register(app) {
     });
 
     router.post('/auth', function *() {
-        console.log("auth called");
         const token = this.request.body.jwt;
-
-
 
         if (true) { //somehow validate google token & return our own signed token, eventually with role
         this.body = {
