@@ -1,7 +1,7 @@
 const jwt = require("koa-jwt");
-const jsonwebtoken = require("jsonwebtoken");
-const SECRET = "verysecretkey"; //for dev purposes
-const jwtInstance = jwt({secret: SECRET});
+const jsonwebtoken = require("jsonwebtoken"); //for dev purposes
+var json = require('./config.json');
+const jwtInstance = jwt({secret: json.Client_Secret});
 
 function* JWTErrorHandler(next){
     try {

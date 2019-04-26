@@ -7,5 +7,7 @@
    "server": {
       "port": 3001,
       "basePath": ""
-   }
+   },
+   "Client_ID": "b1bvbubqp3abgi76nn5icr4ucgt8o8j6.apps.googleusercontent.com",
+   "Client_Secret": "DPxmN_6MlahUCDyEL8d-zkQg"
 }

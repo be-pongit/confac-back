@@ -1,6 +1,9 @@
 import Router from 'koa-router';
 import jwt from '../jwt';
 
+var json = require('../config.json');
+const { OAuth2Client } = require('google-auth-library');
+
 export default function register(app) {
     const router = new Router({
       prefix: '/api/users'
@@ -29,22 +32,43 @@ export default function register(app) {
     });
 
     router.post('/auth', function *() {
-        const token = this.request.body.jwt;
-
-        if (true) { //somehow validate google token & return our own signed token, eventually with role
-        this.body = {
-            token: jwt.issue({
-                //role: "admin" for rbac later
-            })
-        }
-            } else {
-                this.status = 401;
-                this.body = { error: "Invalid login"};
+        const token = this.request.body.id_token;
+        console.log(token);
+        getGoogleUser(token).then( response => {
+            console.log(response);
+            if (this.mongo.collection('users').find({ email: response.email }) != '') {
+                this.body = {
+                    token: jwt.issue({
+                        email: response.email
+                    })
+                }
             }
-
-    });
+            })
+            
+        });
 
     app.use(router.routes());
     app.use(router.allowedMethods());
+
+}
+
+function getGoogleUser(id_token) {
+
+    var client = new OAuth2Client(json.Client_ID, '','');
+    return client.verifyIdToken( {
+        idToken: id_token,
+        audience: json.Client_ID
+    }).then(login => {
+        let payload = login.getPayload();
+        return {
+            name: payload['name'],
+            id: payload['sub'],
+            email: payload['email']
+        }
+    }).then(user => {
+         return user;
+    }).catch(err => {
+        console.log(err);
+    })
 
 }
