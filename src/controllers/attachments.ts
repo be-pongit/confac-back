@@ -1,6 +1,17 @@
 import {Request, Response} from 'express';
+import fs from 'fs';
 
 import {AttachmentsCollection, IAttachment, AttachmentsClientCollection} from '../models/attachments';
+import {ClientsCollection, IClient} from '../models/clients';
+import {IInvoice, InvoicesCollection} from '../models/invoices';
+import {IEmailAttachment} from '../models/common';
+
+interface IFile {
+  name: string;
+  type: string;
+  lastModifiedDate: string;
+  path: string;
+}
 
 export const getAttachment = async (req: Request, res: Response) => {
   const {
@@ -63,4 +74,41 @@ export const getAttachment = async (req: Request, res: Response) => {
   }
 
   return res.type(responseType).set('Content-Disposition', `inline;filename=${fileName}`).send(attachmentBuffer);
+};
+
+export const addAttachment = async (req: Request, res: Response) => {
+  const {id, model, type} = req.params;
+  const [file] = req.files as Express.Multer.File[];
+
+  const fileBuffer = file.buffer;
+  let result: IClient | IInvoice | null = null;
+
+  if (model === 'invoice') {
+    result = await InvoicesCollection.findById({_id: id}, 'attachments');
+    const {_id, attachments} = result!;
+    attachments.push({
+      type,
+      fileName: file.originalname,
+      fileType: file.mimetype,
+      lastModifiedDate: new Date().toISOString(),
+    });
+
+    await InvoicesCollection.findByIdAndUpdate({_id}, {attachments});
+    await AttachmentsCollection.findByIdAndUpdate({_id}, {$set: {[type]: fileBuffer}}, {upsert: true});
+  }
+
+  if (model === 'client') {
+    result = await ClientsCollection.findById({_id: id}, 'attachments');
+    const {_id, attachments} = result!;
+    attachments.push({
+      type,
+      fileName: file.originalname,
+      fileType: file.mimetype,
+      lastModifiedDate: new Date().toISOString(),
+    });
+    await ClientsCollection.findByIdAndUpdate({_id}, {attachments});
+    await AttachmentsClientCollection.findByIdAndUpdate({_id}, {$set: {[type]: fileBuffer}}, {upsert: true});
+  }
+
+  return res.send(result);
 };
