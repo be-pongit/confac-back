@@ -81,10 +81,9 @@ export const addAttachment = async (req: Request, res: Response) => {
   const [file] = req.files as Express.Multer.File[];
 
   const fileBuffer = file.buffer;
-  let result: IClient | IInvoice | null = null;
 
   if (model === 'invoice') {
-    result = await InvoicesCollection.findById({_id: id}, 'attachments');
+    const result = await InvoicesCollection.findById({_id: id}, 'attachments');
     const {_id, attachments} = result!;
     attachments.push({
       type,
@@ -93,22 +92,26 @@ export const addAttachment = async (req: Request, res: Response) => {
       lastModifiedDate: new Date().toISOString(),
     });
 
-    await InvoicesCollection.findByIdAndUpdate({_id}, {attachments});
+    // await InvoicesCollection.findByIdAndUpdate({_id}, {attachments});
     await AttachmentsCollection.findByIdAndUpdate({_id}, {$set: {[type]: fileBuffer}}, {upsert: true});
+    return res.send(result);
   }
 
   if (model === 'client') {
-    result = await ClientsCollection.findById({_id: id}, 'attachments');
-    const {_id, attachments} = result!;
-    attachments.push({
+    const result = await ClientsCollection.findById({_id: id});
+    if (!result) {
+      return res.send('Unknown id');
+    }
+
+    result.attachments.push({
       type,
       fileName: file.originalname,
       fileType: file.mimetype,
       lastModifiedDate: new Date().toISOString(),
     });
-    await ClientsCollection.findByIdAndUpdate({_id}, {attachments});
-    await AttachmentsClientCollection.findByIdAndUpdate({_id}, {$set: {[type]: fileBuffer}}, {upsert: true});
-  }
 
-  return res.send(result);
+    await ClientsCollection.findByIdAndUpdate({_id: result._id}, result);
+    await AttachmentsClientCollection.findByIdAndUpdate({_id: result._id}, {$set: {[type]: fileBuffer}}, {upsert: true});
+    return res.send(result);
+  }
 };
